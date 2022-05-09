@@ -1,9 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.Linq;
 using System.Text;
-using System.Net;
-using System.Threading.Tasks;
 using System.Xml;
 
 #nullable enable
@@ -80,7 +77,7 @@ namespace LabaOOP7_8
     static class Extensions
     {
         public static T Unwrap<T>(this T? item)
-        where T: class
+        where T : class
         {
             if (item is null)
                 throw new ArgumentNullException(nameof(item));
