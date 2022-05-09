@@ -25,6 +25,6 @@
         </ScrollViewer>
         <Button Content="Загрузить" Grid.Row="1" VerticalAlignment="Center" HorizontalAlignment="Center" Click="DownloadRss"/>
         <TextBox Text="https://news.yandex.ru/games.rss" Grid.Row="1" Grid.Column="1" VerticalAlignment="Center" Margin="40,0" x:Name="RSSLink" Grid.ColumnSpan="2"/>
-        <Button Content="Загрузить из БД" Grid.Column="3" Grid.Row="2" VerticalAlignment="Center" HorizontalAlignment="Center"/>
+        <Button Content="Загрузить из БД" Grid.Column="3" Grid.Row="2" VerticalAlignment="Center" HorizontalAlignment="Center" Click="LoadFromDB"/>
     </Grid>
 </Window>

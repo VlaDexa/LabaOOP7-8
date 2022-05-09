@@ -1,4 +1,5 @@
-﻿using System;
+﻿using MySql.Data.MySqlClient;
+using System;
 using System.Collections.Generic;
 using System.Text;
 using System.Xml;
@@ -9,11 +10,11 @@ namespace LabaOOP7_8
 {
     internal class RSSItem
     {
-        readonly string? Title;
-        readonly Uri? Link;
-        readonly string? Description;
-        readonly string? Author;
-        readonly string? Date;
+        private readonly string? Title;
+        private readonly Uri? Link;
+        private readonly string? Description;
+        private readonly string? Author;
+        private readonly string? Date;
 
         public RSSItem(XmlNode node)
         {
@@ -25,27 +26,56 @@ namespace LabaOOP7_8
             Date = node.SelectSingleNode("pubDate")?.InnerText;
         }
 
+        public RSSItem(MySqlDataReader connection)
+        {
+            Title = connection.GetString("title");
+            Link = connection.GetString("link") != null ? new Uri(connection.GetString("link")) : null;
+            Description = connection.GetString("description");
+            Author = connection.GetString("author");
+            Date = connection.GetString("date");
+        }
+
+        public void WriteToDb(MySqlConnection connection)
+        {
+            // Create a table if it doesn't exist where every field is a nullable string
+            var sql = "CREATE TABLE IF NOT EXISTS news (title MEDIUMTEXT, link MEDIUMTEXT, description MEDIUMTEXT, author MEDIUMTEXT, date MEDIUMTEXT)";
+            var command = new MySqlCommand(sql, connection);
+            command.ExecuteNonQuery();
+            sql = $"INSERT INTO news (title, link, description, author, date) VALUES ('{Title}', '{Link}', '{Description}', '{Author}', '{Date}')";
+            command = new MySqlCommand(sql, connection);
+            command.ExecuteNonQuery();
+        }
+
         public override string ToString()
         {
-            var sb = new StringBuilder(58);
+            StringBuilder? sb = new StringBuilder(58);
             // Check each property if it is null
             // If not, add it
-            if (Title != null) sb.AppendLine($"Заголовок - {Title}");
-            if (Link != null) sb.AppendLine($"Ссылка - {Link}");
-            if (Description != null) sb.AppendLine($"Описание - {Description}");
-            if (Author != null) sb.AppendLine($"Автора - {Author}");
-            if (Date != null) sb.AppendLine($"Дата - {Date}");
+            if (Title != null)
+                sb.AppendLine($"Заголовок - {Title}");
+
+            if (Link != null)
+                sb.AppendLine($"Ссылка - {Link}");
+
+            if (Description != null)
+                sb.AppendLine($"Описание - {Description}");
+
+            if (Author != null)
+                sb.AppendLine($"Автора - {Author}");
+
+            if (Date != null)
+                sb.AppendLine($"Дата - {Date}");
 
             return sb.ToString();
         }
     }
 
-    class RSSArticle
+    internal class RSSArticle
     {
-        readonly string Title;
-        readonly Uri Link;
-        readonly string Description;
-        readonly List<RSSItem> Items;
+        private readonly string Title;
+        private readonly Uri Link;
+        private readonly string Description;
+        private readonly List<RSSItem> Items;
 
         public RSSArticle(XmlNode node)
         {
@@ -58,13 +88,46 @@ namespace LabaOOP7_8
                 Items.Add(new RSSItem(item));
         }
 
+        public RSSArticle(MySqlConnection db)
+        {
+            var sql = "SELECT * FROM article";
+            var command = new MySqlCommand(sql, db);
+            var reader = command.ExecuteReader();
+            reader.Read();
+            Title = reader.GetString("title");
+            Link = new Uri(reader.GetString("link"));
+            Description = reader.GetString("description");
+            reader.Close();
+            Items = new List<RSSItem>();
+            sql = "SELECT * FROM news";
+            command = new MySqlCommand(sql, db);
+            reader = command.ExecuteReader();
+            while (reader.Read())
+                Items.Add(new RSSItem(reader));
+        }
+
+        public void WriteToDB(MySqlConnection db, string fullText)
+        {
+            // Create table article if it doesn't exist
+            // there can be only one article
+            var sql = "CREATE TABLE IF NOT EXISTS article (title MEDIUMTEXT, link MEDIUMTEXT, description MEDIUMTEXT, raw_text LONGTEXT)";
+            var command = new MySqlCommand(sql, db);
+            command.ExecuteNonQuery();
+            // Insert article into table
+            sql = $"INSERT INTO article (title, link, description, raw_text) VALUES ('{Title}', '{Link}', '{Description}', '{fullText.Replace("\'", "\\'")}')";
+            command = new MySqlCommand(sql, db);
+            command.ExecuteNonQuery();
+            foreach (var item in Items)
+                item.WriteToDb(db);
+        }
+
         public override string ToString()
         {
             var sb = new StringBuilder(54);
             sb.AppendLine($"Название канала - {Title}");
             sb.AppendLine($"Ссылка на канал - {Link}");
             sb.AppendLine($"Описание канала - {Description}");
-            foreach (var item in Items)
+            foreach (RSSItem? item in Items)
             {
                 sb.AppendLine(new string('=', 40));
                 sb.AppendLine(item.ToString().TrimEnd());
@@ -74,14 +137,12 @@ namespace LabaOOP7_8
         }
     }
 
-    static class Extensions
+    internal static class Extensions
     {
         public static T Unwrap<T>(this T? item)
         where T : class
         {
-            if (item is null)
-                throw new ArgumentNullException(nameof(item));
-            return item;
+            return item is null ? throw new ArgumentNullException(nameof(item)) : item;
         }
     }
 }
