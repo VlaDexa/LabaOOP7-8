@@ -1,14 +1,14 @@
-﻿using MySql.Data.MySqlClient;
+﻿using LabaOOP7_8.RSS;
+using MySql.Data.MySqlClient;
 using System;
-using System.Net;
+using System.Collections.Generic;
 using System.IO;
+using System.Linq;
+using System.Net;
+using System.Text;
+using System.Text.RegularExpressions;
 using System.Windows;
 using System.Xml;
-using System.Text;
-using System.Linq;
-using System.Collections.Generic;
-using System.Text.RegularExpressions;
-using LabaOOP7_8.RSS;
 
 namespace LabaOOP7_8
 {
@@ -20,19 +20,19 @@ namespace LabaOOP7_8
         static readonly XmlDocument document = new XmlDocument();
         static readonly MySqlConnection sqlConnection = new MySqlConnection("server=localhost;user=Laba;port=3306;password=TestetyTest");
         static readonly Regex regexp = new Regex("<[^<]+>", RegexOptions.CultureInvariant | RegexOptions.Compiled);
-        
+
         public MainWindow()
         {
             InitializeComponent();
             sqlConnection.Open();
         }
-        
+
         private string FormatRaw(string input)
         {
             var matches = regexp.Matches(input);
             var sb = new StringBuilder(input, input.Length + matches.Count);
             foreach (var (index, match) in regexp.Matches(input).Cast<Match>().Enumerate())
-                sb.Insert(match.Index+match.Length+(int)index, '\n');
+                sb.Insert(match.Index + match.Length + (int)index, '\n');
 
             return sb.ToString();
         }
