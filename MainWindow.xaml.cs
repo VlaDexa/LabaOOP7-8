@@ -1,7 +1,7 @@
 ﻿using MySql.Data.MySqlClient;
 using System;
-using System.IO;
 using System.Net;
+using System.IO;
 using System.Windows;
 using System.Xml;
 using LabaOOP7_8.RSS;
@@ -13,18 +13,13 @@ namespace LabaOOP7_8
     /// </summary>
     public partial class MainWindow : Window
     {
+        static readonly XmlDocument document = new XmlDocument();
+        static readonly MySqlConnection sqlConnection = new MySqlConnection("server=localhost;user=Laba;port=3306;password=TestetyTest");
+
         public MainWindow()
         {
             InitializeComponent();
-        }
-
-        private static string DownloadStringFromLink(string link)
-        {
-            var request = WebRequest.Create(link);
-            using var response = request.GetResponse();
-            using var stream = response.GetResponseStream();
-            using var reader = new StreamReader(stream);
-            return reader.ReadToEnd();
+            sqlConnection.Open();
         }
 
         private void DownloadRss(object sender, RoutedEventArgs e)
@@ -32,25 +27,25 @@ namespace LabaOOP7_8
             var rssLinkText = RSSLink.Text;
             try
             {
-                var rssXmlString = DownloadStringFromLink(rssLinkText);
+                document.Load(rssLinkText);
                 Raw.Document.Blocks.Clear();
-                Raw.AppendText(rssXmlString);
-                var document = new XmlDocument();
-                document.LoadXml(rssXmlString);
+                Raw.AppendText(document.InnerXml);
                 var channelNode = document.SelectSingleNode("rss/channel").Unwrap();
                 var article = new Article(channelNode);
                 Parsed.Document.Blocks.Clear();
                 Parsed.AppendText(article.ToString());
-                using var sqlConnection = new MySqlConnection("server=localhost;user=Laba;port=3306;password=TestetyTest");
-                sqlConnection.Open();
-                const string sql = "DROP DATABASE IF EXISTS news; CREATE DATABASE news; USE news;";
+                const string sql = "DROP DATABASE IF EXISTS news; CREATE DATABASE news; USE news; CREATE TABLE IF NOT EXISTS article (title MEDIUMTEXT, link MEDIUMTEXT, description MEDIUMTEXT, raw_text LONGTEXT); CREATE TABLE IF NOT EXISTS news (title MEDIUMTEXT, link MEDIUMTEXT, description MEDIUMTEXT, author MEDIUMTEXT, date MEDIUMTEXT);";
                 var command = new MySqlCommand(sql, sqlConnection);
                 command.ExecuteNonQuery();
-                article.WriteToDb(sqlConnection, rssXmlString);
+                article.WriteToDb(sqlConnection, document.InnerXml);
             }
             catch (WebException)
             {
                 MessageBox.Show("Невозможно подключиться к сайту");
+            }
+            catch (Exception ex) when (ex is FileNotFoundException || ex is DirectoryNotFoundException)
+            {
+                MessageBox.Show("Данный файл не найден");
             }
             catch (XmlException)
             {
@@ -60,7 +55,7 @@ namespace LabaOOP7_8
             {
                 MessageBox.Show("Ошибка при записи в БД");
             }
-            catch (Exception)
+            catch
             {
                 MessageBox.Show("Неизвестная ошибка");
             }
@@ -70,9 +65,7 @@ namespace LabaOOP7_8
         {
             try
             {
-                using var sqlConnection = new MySqlConnection("server=localhost;user=Laba;port=3306;password=TestetyTest;database=news");
-                sqlConnection.Open();
-                const string sql = "SELECT * FROM article";
+                const string sql = "USE news; SELECT * FROM article";
                 var command = new MySqlCommand(sql, sqlConnection);
                 var reader = command.ExecuteReader();
                 reader.Read();

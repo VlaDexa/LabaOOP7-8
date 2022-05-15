@@ -44,14 +44,9 @@ namespace LabaOOP7_8
 
             public void WriteToDb(MySqlConnection connection)
             {
-                // Create a table if it doesn't exist where every field is a nullable string
-                var sql =
-                    "CREATE TABLE IF NOT EXISTS news (title MEDIUMTEXT, link MEDIUMTEXT, description MEDIUMTEXT, author MEDIUMTEXT, date MEDIUMTEXT)";
-                var command = new MySqlCommand(sql, connection);
-                command.ExecuteNonQuery();
-                sql =
+                const string sql =
                     "INSERT INTO news (title, link, description, author, date) VALUES (@title, @link, @description, @author, @date)";
-                command = new MySqlCommand(sql, connection);
+                var command = new MySqlCommand(sql, connection);
                 command.Parameters.AddWithValue("@title", Title);
                 command.Parameters.AddWithValue("@link", Link);
                 command.Parameters.AddWithValue("@description", Description);
@@ -66,19 +61,19 @@ namespace LabaOOP7_8
                 // Check each property if it is null
                 // If not, add it
                 if (Title != null)
-                    sb.AppendLine($"Заголовок - {Title}");
+                    sb.AppendFormat("Заголовок - {0}\n", Title);
 
                 if (Link != null)
-                    sb.AppendLine($"Ссылка - {Link}");
+                    sb.AppendFormat("Ссылка - {0}\n", Link);
 
                 if (Description != null)
-                    sb.AppendLine($"Описание - {Description}");
+                    sb.AppendFormat("Описание - {0}\n", Description);
 
                 if (Author != null)
-                    sb.AppendLine($"Автора - {Author}");
+                    sb.AppendFormat("Автор - {0}\n", Author);
 
                 if (Date != null)
-                    sb.AppendLine($"Дата - {Date}");
+                    sb.AppendFormat("Дата - {0}\n", Date);
 
                 return sb.ToString();
             }
@@ -88,13 +83,13 @@ namespace LabaOOP7_8
         {
             private readonly string Description;
             private readonly List<Item> Items;
-            private readonly Uri Link;
+            private readonly string Link;
             private readonly string Title;
 
             public Article(XmlNode node)
             {
                 Title = node.SelectSingleNode("title").Unwrap().InnerText;
-                Link = new Uri(node.SelectSingleNode("link").Unwrap().InnerText);
+                Link = node.SelectSingleNode("link").Unwrap().InnerText;
                 Description = node.SelectSingleNode("description").Unwrap().InnerText;
                 Items = node.SelectNodes("item").Unwrap().Cast<XmlNode>().Select(item => new Item(item)).ToList();
             }
@@ -107,11 +102,9 @@ namespace LabaOOP7_8
                 {
                     reader.Read();
                     Title = reader.GetString("title");
-                    Link = new Uri(reader.GetString("link"));
+                    Link = reader.GetString("link");
                     Description = reader.GetString("description");
                 }
-
-                ;
                 sql = "SELECT * FROM news";
                 command = new MySqlCommand(sql, db);
                 Items = new List<Item>();
@@ -124,18 +117,11 @@ namespace LabaOOP7_8
 
             public void WriteToDb(MySqlConnection db, string fullText)
             {
-                // Create table article if it doesn't exist
-                // there can be only one article
-                var sql =
-                    "CREATE TABLE IF NOT EXISTS article (title MEDIUMTEXT, link MEDIUMTEXT, description MEDIUMTEXT, raw_text LONGTEXT)";
-                var command = new MySqlCommand(sql, db);
-                command.ExecuteNonQuery();
-                // Insert article into table
-                sql =
+                const string sql =
                     "INSERT INTO article (title, link, description, raw_text) VALUES (@title, @link, @description, @raw_text)";
-                command = new MySqlCommand(sql, db);
+                var command = new MySqlCommand(sql, db);
                 command.Parameters.AddWithValue("@title", Title);
-                command.Parameters.AddWithValue("@link", Link.ToString());
+                command.Parameters.AddWithValue("@link", Link);
                 command.Parameters.AddWithValue("@description", Description);
                 command.Parameters.AddWithValue("@raw_text", fullText);
                 command.ExecuteNonQuery();
@@ -146,9 +132,9 @@ namespace LabaOOP7_8
             public override string ToString()
             {
                 var sb = new StringBuilder(54);
-                sb.AppendLine($"Название канала - {Title}");
-                sb.AppendLine($"Ссылка на канал - {Link}");
-                sb.AppendLine($"Описание канала - {Description}");
+                sb.AppendFormat("Название канала - {0}\n", Title);
+                sb.AppendFormat("Ссылка на канал - {0}\n", Link);
+                sb.AppendFormat("Описание канала - {0}\n", Description);
                 foreach (var item in Items)
                 {
                     sb.AppendLine(new string('=', 40));
@@ -162,7 +148,7 @@ namespace LabaOOP7_8
 
     internal static class Extensions
     {
-        public static T Unwrap<T>(this T? item)
+        public static T Unwrap<T>(this T item)
             where T : class
         {
             return item is null ? throw new ArgumentNullException(nameof(item)) : item;
