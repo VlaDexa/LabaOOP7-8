@@ -146,7 +146,7 @@ namespace LabaOOP7_8
         }
     }
 
-    internal static class Extensions
+    internal static partial class Extensions
     {
         public static T Unwrap<T>(this T item)
             where T : class
