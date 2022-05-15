@@ -4,6 +4,7 @@ using System.IO;
 using System.Net;
 using System.Windows;
 using System.Xml;
+using LabaOOP7_8.RSS;
 
 namespace LabaOOP7_8
 {
@@ -17,42 +18,35 @@ namespace LabaOOP7_8
             InitializeComponent();
         }
 
+        private static string DownloadStringFromLink(string link)
+        {
+            var request = WebRequest.Create(link);
+            using var response = request.GetResponse();
+            using var stream = response.GetResponseStream();
+            using var reader = new StreamReader(stream);
+            return reader.ReadToEnd();
+        }
+
         private void DownloadRss(object sender, RoutedEventArgs e)
         {
-            string RSSString = RSSLink.Text;
+            var rssLinkText = RSSLink.Text;
             try
             {
-                var RSSXML = WebRequest.Create(RSSString);
-                using var response = RSSXML.GetResponse();
-                using var stream = response.GetResponseStream();
-                using var reader = new StreamReader(stream);
-                var RSSXMLString = reader.ReadToEnd();
-                reader.Close();
-                stream.Close();
-                response.Close();
+                var rssXmlString = DownloadStringFromLink(rssLinkText);
                 Raw.Document.Blocks.Clear();
-                Raw.AppendText(RSSXMLString);
-                var RSSXMLDocument = new XmlDocument();
-                RSSXMLDocument.LoadXml(RSSXMLString);
-                var channelNode = RSSXMLDocument.SelectSingleNode("rss/channel").Unwrap();
-                var RSSNews = new RSSArticle(channelNode);
+                Raw.AppendText(rssXmlString);
+                var document = new XmlDocument();
+                document.LoadXml(rssXmlString);
+                var channelNode = document.SelectSingleNode("rss/channel").Unwrap();
+                var article = new Article(channelNode);
                 Parsed.Document.Blocks.Clear();
-                Parsed.AppendText(RSSNews.ToString());
+                Parsed.AppendText(article.ToString());
                 using var sqlConnection = new MySqlConnection("server=localhost;user=Laba;port=3306;password=TestetyTest");
                 sqlConnection.Open();
-                // Drop database news if exists
-                var sql = "DROP DATABASE IF EXISTS news";
+                const string sql = "DROP DATABASE IF EXISTS news; CREATE DATABASE news; USE news;";
                 var command = new MySqlCommand(sql, sqlConnection);
                 command.ExecuteNonQuery();
-                // Create database news
-                sql = "CREATE DATABASE news";
-                command = new MySqlCommand(sql, sqlConnection);
-                command.ExecuteNonQuery();
-                // Use database news
-                sql = "USE news";
-                command = new MySqlCommand(sql, sqlConnection);
-                command.ExecuteNonQuery();
-                RSSNews.WriteToDB(sqlConnection, RSSXMLString);
+                article.WriteToDb(sqlConnection, rssXmlString);
             }
             catch (WebException)
             {
@@ -72,20 +66,20 @@ namespace LabaOOP7_8
             }
         }
 
-        private void LoadFromDB(object sender, RoutedEventArgs e)
+        private void LoadFromDb(object sender, RoutedEventArgs e)
         {
             try
             {
                 using var sqlConnection = new MySqlConnection("server=localhost;user=Laba;port=3306;password=TestetyTest;database=news");
                 sqlConnection.Open();
-                var sql = "SELECT * FROM article";
+                const string sql = "SELECT * FROM article";
                 var command = new MySqlCommand(sql, sqlConnection);
                 var reader = command.ExecuteReader();
                 reader.Read();
                 Raw.Document.Blocks.Clear();
                 Raw.AppendText(reader.GetString("raw_text"));
                 reader.Close();
-                var article = new RSSArticle(sqlConnection);
+                var article = new Article(sqlConnection);
                 Parsed.Document.Blocks.Clear();
                 Parsed.AppendText(article.ToString());
             }

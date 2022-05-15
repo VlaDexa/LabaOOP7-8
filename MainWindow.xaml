@@ -18,13 +18,13 @@
             <ColumnDefinition/>
         </Grid.ColumnDefinitions>
         <ScrollViewer VerticalScrollBarVisibility="Auto" Grid.ColumnSpan="2">
-            <RichTextBox IsEnabled="False" Margin="15" x:Name="Raw"/>
+            <RichTextBox IsReadOnly="True" Margin="15" x:Name="Raw" IsDocumentEnabled="True"/>
         </ScrollViewer>
         <ScrollViewer VerticalScrollBarVisibility="Auto" Grid.Column="2" Grid.ColumnSpan="2">
-            <RichTextBox IsEnabled="False" Margin="15" x:Name="Parsed" Grid.ColumnSpan="2"/>
+            <RichTextBox IsReadOnly="True" Margin="15" x:Name="Parsed" IsDocumentEnabled="True"/>
         </ScrollViewer>
         <Button Content="Загрузить" Grid.Row="1" VerticalAlignment="Center" HorizontalAlignment="Center" Click="DownloadRss"/>
         <TextBox Text="https://news.yandex.ru/games.rss" Grid.Row="1" Grid.Column="1" VerticalAlignment="Center" Margin="40,0" x:Name="RSSLink" Grid.ColumnSpan="2"/>
-        <Button Content="Загрузить из БД" Grid.Column="3" Grid.Row="2" VerticalAlignment="Center" HorizontalAlignment="Center" Click="LoadFromDB"/>
+        <Button Content="Загрузить из БД" Grid.Column="3" Grid.Row="1" VerticalAlignment="Center" HorizontalAlignment="Center" Click="LoadFromDb"/>
     </Grid>
 </Window>
