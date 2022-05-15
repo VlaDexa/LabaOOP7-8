@@ -53,7 +53,7 @@ namespace LabaOOP7_8
                 const string sql = "DROP DATABASE IF EXISTS news; CREATE DATABASE news; USE news; CREATE TABLE IF NOT EXISTS article (title MEDIUMTEXT, link MEDIUMTEXT, description MEDIUMTEXT, raw_text LONGTEXT); CREATE TABLE IF NOT EXISTS news (title MEDIUMTEXT, link MEDIUMTEXT, description MEDIUMTEXT, author MEDIUMTEXT, date MEDIUMTEXT);";
                 var command = new MySqlCommand(sql, sqlConnection);
                 command.ExecuteNonQuery();
-                article.WriteToDb(sqlConnection, document.InnerXml);
+                article.WriteToDb(sqlConnection, formated);
             }
             catch (WebException)
             {
